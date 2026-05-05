@@ -1,120 +1,284 @@
-# 🌍 Terrain Segmentation using Deep Learning
-
-This project was developed as part of a hackathon focused on semantic segmentation of real-world terrain images. The model identifies and segments different regions such as vegetation, land, water, sky, rocks, and more.
-
----
-
-## 📌 Problem Statement
-
-Given an input image, the goal is to perform **semantic segmentation** by classifying each pixel into predefined terrain categories such as:
-- 🌿 Vegetation
-- 🪨 Rock
-- 🌊 Water
-- 🌄 Land
-- ☁️ Sky/ others
+# Duality AI – Offroad Semantic Scene Segmentation
+### DeepLabV3+ | Windows + NVIDIA GPU | 10 Desert Classes
 
 ---
 
-## 🧠 Approach
+## 📁 Project Structure
 
-We used a **Transformer-based segmentation model (SegFormer)** for accurate pixel-wise classification.
-
-### Key Steps:
-- Data cleaning (fixing mismatched RGB and mask files)
-- Image preprocessing & augmentations
-- Model training using PyTorch
-- Loss optimization using CrossEntropyLoss
-- Evaluation using mIoU / mAP50
-
----
-
-## ⚙️ Tech Stack
-
-- Python
-- PyTorch
-- HuggingFace Transformers
-- Albumentations
-- NumPy
-
----
-
-## 📂 Project Structure
-.
-├── desert-seg-v1/
-│   ├── checkpoints/
-│   │   ├── best_model.pth
-│   │   └── last_model.pth
-│   │
-│   ├── outputs/
-│   │   ├── metrics/
-│   │   │   ├── confusion_matrix.png
-│   │   │   ├── iou_scores.csv
-│   │   │   ├── loss_graph.png
-│   │   │   └── val_iou_summary.csv
-│   │   │
-│   │   └── predictions/
-│   │
-│   ├── src/
-│   │   ├── dataset.py
-│   │   ├── evaluate.py
-│   │   ├── model.py
-│   │   ├── predict.py
-│   │   ├── prepare.py
-│   │   └── train.py
-│   │
-│   ├── training-dataset-seg/
-│   │   ├── train/
-│   │   │   ├── Color_Images/
-│   │   │   └── Segmentation/
-│   │   │
-│   │   └── val/
-│   │       ├── Color_Images/
-│   │       └── Segmentation/
-│   │
-│   ├── config.yaml
-│   └── venv/
+```
+duality_segmentation/
 │
-└── training-dataset/
+├── ENV_SETUP/
+│   └── setup_env.bat        ← Run this FIRST to install everything
+│
+├── dataset/                 ← Put your downloaded dataset here
+│   ├── train/
+│   │   ├── rgb/             ← Training colour images
+│   │   └── seg/             ← Training segmentation masks
+│   ├── val/
+│   │   ├── rgb/
+│   │   └── seg/
+│   └── testImages/          ← Unseen test images (no masks)
+│
+├── dataset.py               ← Dataset loader + class definitions
+├── model.py                 ← DeepLabV3+ model + loss function
+├── metrics.py               ← IoU metric computation
+├── train.py                 ← MAIN TRAINING SCRIPT
+├── test.py                  ← MAIN TEST / INFERENCE SCRIPT
+├── visualize.py             ← Generate coloured visualisations
+└── README.md
+```
 
 ---
 
-## 📊 Results
+## ⚡ Step-by-Step Setup
 
-- ✅ **mIoU Achieved:** ~0.4313  
-- 📈 Currently working towards improving it to **0.7+**
-
----
-
-## 🧩 Challenges Faced
-- Dataset inconsistencies (missing/mismatched masks)
-- Debugging training pipeline under time constraints
-- Handling shape mismatch issues in segmentation output
-- Limited time for fine-tuning model
+### Step 1 – Install Anaconda
+Download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://www.anaconda.com/download) for Windows.
 
 ---
 
-##🔮 Future Improvements
-- Better hyperparameter tuning
-- Data augmentation improvements
-- Model architecture experimentation
-- Increase mIoU beyond 0.6+
+### Step 2 – Setup Environment (ONE TIME ONLY)
+
+Open **Anaconda Prompt** (search for it in Start Menu), then navigate to your project folder:
+
+```bat
+cd C:\path\to\duality_segmentation\ENV_SETUP
+setup_env.bat
+```
+
+This installs:
+- PyTorch + CUDA 11.8
+- segmentation_models_pytorch
+- albumentations
+- opencv, matplotlib, tqdm, tensorboard
+
+> ⚠️ If your CUDA version is different, edit `setup_env.bat` and change `pytorch-cuda=11.8`  
+> Check your version with: `nvidia-smi`
 
 ---
 
-##👨‍👩‍👦 Team Members
-- Ashwani Kumar (Team Leader)
-- Siddhartha Pal
-- Sumit Mehara
-- Nitin Kumar
+### Step 3 – Download & Place Dataset
+
+1. Go to: https://falcon.duality.ai/secure/documentation/hackathon-segmentation-desert
+2. Create a free Falcon account if needed
+3. Navigate to the **"Segmentation Track"** section
+4. Download the dataset
+5. Extract it so your folder looks like:
+
+```
+duality_segmentation/
+└── dataset/
+    ├── train/
+    │   ├── rgb/      ← .png or .jpg images
+    │   └── seg/      ← .png mask files
+    ├── val/
+    │   ├── rgb/
+    │   └── seg/
+    └── testImages/   ← unseen test images
+```
 
 ---
 
-##📌 Notes
+### Step 4 – Activate Environment
 
-- This repository contains the complete implementation used for the hackathon submission. Final evaluation will be conducted by organizers based on submitted results.
+Every time you open a new terminal, run:
+
+```bat
+conda activate EDU
+```
 
 ---
 
-##🙌 Acknowledgment
+## 🚀 Training
 
-- We thank the organizers for providing a meaningful real-world problem and a well-structured hackathon experience.
+### Basic Training (Recommended to start)
+
+```bat
+conda activate EDU
+cd C:\path\to\duality_segmentation
+python train.py
+```
+
+This will:
+- Train for **50 epochs** with batch size 4
+- Save best model → `runs/checkpoints/best_model.pth`
+- Save loss & mIoU graphs → `runs/`
+- Log to TensorBoard → `runs/tb_logs/`
+
+---
+
+### Advanced Training Options
+
+```bat
+# Change epochs and learning rate
+python train.py --epochs 80 --lr 5e-5
+
+# Use stronger backbone (needs more VRAM)
+python train.py --encoder resnet101
+
+# Smaller batch if you get "CUDA out of memory"
+python train.py --batch_size 2
+
+# Resume interrupted training
+python train.py --resume runs/checkpoints/latest.pth
+
+# All options together
+python train.py --epochs 60 --batch_size 4 --lr 1e-4 --encoder resnet50
+```
+
+---
+
+### Watch Training in Real-Time (TensorBoard)
+
+Open a **second** Anaconda Prompt window and run:
+
+```bat
+conda activate EDU
+tensorboard --logdir runs/tb_logs
+```
+Then open your browser at: **http://localhost:6006**
+
+---
+
+## 🧪 Testing & Evaluation
+
+### Run on Validation + Test Images
+
+```bat
+python test.py
+```
+
+This will:
+1. Compute **IoU scores** on the validation set
+2. Run inference on all images in `dataset/testImages/`
+3. Save predicted masks → `runs/predictions/`
+
+---
+
+### Save Colour Visualisations
+
+```bat
+python test.py --save_vis
+```
+
+Side-by-side comparisons (original vs coloured segmentation) will be saved to:
+`runs/predictions/visualizations/`
+
+---
+
+### Generate Visualisations from Saved Predictions
+
+```bat
+python visualize.py
+```
+
+---
+
+## 📊 Understanding the Output
+
+### During Training, you will see:
+
+```
+Epoch [1/50]  LR=1.00e-04
+  Train Loss : 0.8432
+  Val Loss   : 0.9102
+  mIoU       : 0.3218  (32.18%)
+  ✔ Best model saved → runs/checkpoints/best_model.pth
+```
+
+### IoU Report (printed after test.py):
+
+```
+==================================================
+  mIoU : 0.6543  (65.43%)
+==================================================
+  Trees                0.7821  ████████████████
+  Lush Bushes          0.6102  ████████████
+  Dry Grass            0.5984  ████████████
+  Rocks                0.4231  ████████
+  Sky                  0.9201  ██████████████████
+==================================================
+```
+
+### Files generated:
+
+| File | Description |
+|------|-------------|
+| `runs/checkpoints/best_model.pth` | Best model weights |
+| `runs/checkpoints/latest.pth` | Latest checkpoint |
+| `runs/loss_curve.png` | Train vs Val loss graph |
+| `runs/miou_curve.png` | mIoU over epochs |
+| `runs/training_history.json` | All metrics per epoch |
+| `runs/predictions/*.png` | Raw predicted masks |
+| `runs/predictions/visualizations/*.png` | Coloured overlays |
+
+---
+
+## 🎯 Segmentation Classes
+
+| ID | Class | Description |
+|----|-------|-------------|
+| 100 | Trees | Desert trees (e.g. Joshua trees) |
+| 200 | Lush Bushes | Green/lush vegetation |
+| 300 | Dry Grass | Dried grasses |
+| 500 | Dry Bushes | Dried shrubs |
+| 550 | Ground Clutter | Rocks, debris on ground |
+| 600 | Flowers | Desert flowers |
+| 700 | Logs | Fallen logs / wood |
+| 800 | Rocks | Rocks and boulders |
+| 7100 | Landscape | General ground (sand, dirt) |
+| 10000 | Sky | Sky area |
+
+---
+
+## 🔧 Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `CUDA out of memory` | Add `--batch_size 2` to train.py command |
+| `No matching rgb/seg pairs found` | Check folder names: must be `rgb/` and `seg/` |
+| Training very slow | Reduce `--num_workers 2`, check GPU with `nvidia-smi` |
+| Low mIoU on rare classes | Try `--epochs 80`, the model needs more time |
+| `ModuleNotFoundError` | Make sure you ran `conda activate EDU` first |
+| Loss not decreasing | Try lowering `--lr 5e-5` |
+
+---
+
+## 🏆 Tips to Maximise IoU Score
+
+1. **Train longer** – Try 80-100 epochs
+2. **Use stronger backbone** – `--encoder resnet101` (needs ~8GB VRAM)
+3. **Lower learning rate late** – Already handled by cosine scheduler
+4. **Data augmentation is on** – Flip, rotate, colour jitter all enabled
+5. **Combined loss** – Using CE + Dice loss for class imbalance handling
+6. **Resume training** – `--resume runs/checkpoints/latest.pth`
+
+---
+
+## 📦 Submission Checklist
+
+- [ ] `runs/checkpoints/best_model.pth` – trained model weights
+- [ ] `train.py`, `test.py`, `dataset.py`, `model.py`, `metrics.py`
+- [ ] `runs/training_history.json` – training log
+- [ ] `runs/loss_curve.png` – loss graph
+- [ ] `runs/miou_curve.png` – mIoU graph
+- [ ] Hackathon Report (PDF) covering methodology, results, challenges
+- [ ] `README.md` – this file
+
+---
+## 📥 Downloads
+
+### 🔹 Model Weights
+Download from Google Drive:
+[Download Model](https://drive.google.com/file/d/1hkpv88y3tXGmshMhZpa4sc3I0FdGXsDA/view?usp=sharing)
+
+### 🔹 Dataset
+Dataset not included due to size.
+
+You can:
+- Use your own dataset
+- Or download from: (https://drive.google.com/drive/folders/1-w-zGLBLFoz9KYl8KXEXWQo3Q37zJuV6?usp=sharing)
+
+Expected images/outputs: (https://drive.google.com/drive/folders/13IEbpH5AQzMUS1pXygznLb-BTEiCZPJP?usp=sharing)
+*Built for Duality AI Offroad Autonomy Segmentation Challenge*
